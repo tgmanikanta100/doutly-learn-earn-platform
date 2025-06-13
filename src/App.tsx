@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,12 @@ import PrivateRoute from "./components/auth/PrivateRoute";
 import AdminDashboard from "./components/dashboards/AdminDashboard";
 import StudentDashboard from "./components/dashboards/StudentDashboard";
 import FreelancerDashboard from "./components/dashboards/FreelancerDashboard";
+import VerticalHeadDashboard from "./components/dashboards/VerticalHeadDashboard";
+import ManagerDashboard from "./components/dashboards/ManagerDashboard";
+import TeamLeaderDashboard from "./components/dashboards/TeamLeaderDashboard";
+import SubjectExpertDashboard from "./components/dashboards/SubjectExpertDashboard";
+import TutorDashboard from "./components/dashboards/TutorDashboard";
+import BDADashboard from "./components/dashboards/BDADashboard";
 
 const queryClient = new QueryClient();
 
@@ -64,32 +69,32 @@ const AppRoutes = () => {
         {/* Placeholder routes for other roles */}
         <Route path="/vertical-head-dashboard" element={
           <PrivateRoute role="verticalhead">
-            <div className="p-8">Vertical Head Dashboard - Coming Soon</div>
+            <VerticalHeadDashboard />
           </PrivateRoute>
         } />
         <Route path="/manager-dashboard" element={
           <PrivateRoute role="manager">
-            <div className="p-8">Manager Dashboard - Coming Soon</div>
+            <ManagerDashboard />
           </PrivateRoute>
         } />
         <Route path="/team-leader-dashboard" element={
           <PrivateRoute role="teamleader">
-            <div className="p-8">Team Leader Dashboard - Coming Soon</div>
+            <TeamLeaderDashboard />
           </PrivateRoute>
         } />
         <Route path="/subject-expert-dashboard" element={
           <PrivateRoute role="subjectexpert">
-            <div className="p-8">Subject Expert Dashboard - Coming Soon</div>
+            <SubjectExpertDashboard />
           </PrivateRoute>
         } />
         <Route path="/tutor-dashboard" element={
           <PrivateRoute role="tutor">
-            <div className="p-8">Tutor Dashboard - Coming Soon</div>
+            <TutorDashboard />
           </PrivateRoute>
         } />
         <Route path="/bda-dashboard" element={
           <PrivateRoute role="bda">
-            <div className="p-8">BDA Dashboard - Coming Soon</div>
+            <BDADashboard />
           </PrivateRoute>
         } />
         
