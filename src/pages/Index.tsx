@@ -4,6 +4,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import AboutSection from "@/components/landing/AboutSection";
 import ServicesSection from "@/components/landing/ServicesSection";
 import TechBox from "@/components/modules/TechBox";
+import EventsSection from "@/components/landing/EventsSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
@@ -17,6 +18,9 @@ const Index = () => {
       <ServicesSection />
       <div id="techbox">
         <TechBox />
+      </div>
+      <div id="events">
+        <EventsSection />
       </div>
       <TestimonialsSection />
       <CTASection />

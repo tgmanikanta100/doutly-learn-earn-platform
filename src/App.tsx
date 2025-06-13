@@ -18,6 +18,7 @@ import TeamLeaderDashboard from "./components/dashboards/TeamLeaderDashboard";
 import SubjectExpertDashboard from "./components/dashboards/SubjectExpertDashboard";
 import TutorDashboard from "./components/dashboards/TutorDashboard";
 import BDADashboard from "./components/dashboards/BDADashboard";
+import UserProfile from "./components/common/UserProfile";
 import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
@@ -97,6 +98,13 @@ const AppRoutes = () => {
         <Route path="/bda-dashboard" element={
           <PrivateRoute role="bda">
             <BDADashboard />
+          </PrivateRoute>
+        } />
+
+        {/* Profile Route */}
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <UserProfile />
           </PrivateRoute>
         } />
         
