@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
@@ -50,9 +50,10 @@ const Navbar = () => {
                 Sign In
               </Button>
             </Link>
-            <Link to="/signin">
+            <Link to="/signup">
               <Button className="bg-blue-600 hover:bg-blue-700 rounded-full">
-                Get Started
+                <UserPlus className="mr-2 h-4 w-4" />
+                Sign Up
               </Button>
             </Link>
           </div>
@@ -86,12 +87,14 @@ const Navbar = () => {
               <div className="pt-4 pb-2 border-t">
                 <Link to="/signin" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full mb-2">
+                    <User className="mr-2 h-4 w-4" />
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/signin" onClick={() => setIsOpen(false)}>
+                <Link to="/signup" onClick={() => setIsOpen(false)}>
                   <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                    Get Started
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Sign Up
                   </Button>
                 </Link>
               </div>

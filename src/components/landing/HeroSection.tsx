@@ -2,14 +2,18 @@
 import React from 'react';
 import { Play, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
-    <section className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+    <section id="hero" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 opacity-40" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }}></div>
+      <div 
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}
+      ></div>
       
       <div className="container mx-auto px-6 pt-32 pb-20 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -32,10 +36,12 @@ const HeroSection = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full">
-                Start Learning
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <Link to="/signup">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full">
+                  Start Learning
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
               <Button variant="outline" size="lg" className="px-8 py-4 rounded-full border-gray-300">
                 Watch Demo
                 <Play className="ml-2 h-5 w-5" />

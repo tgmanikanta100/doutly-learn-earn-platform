@@ -18,6 +18,7 @@ import TeamLeaderDashboard from "./components/dashboards/TeamLeaderDashboard";
 import SubjectExpertDashboard from "./components/dashboards/SubjectExpertDashboard";
 import TutorDashboard from "./components/dashboards/TutorDashboard";
 import BDADashboard from "./components/dashboards/BDADashboard";
+import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Navigate to={defaultRoute} replace />} />
         <Route path="/signin" element={<Navigate to={defaultRoute} replace />} />
+        <Route path="/signup" element={<Navigate to={defaultRoute} replace />} />
         
         {/* Protected Dashboard Routes */}
         <Route path="/admin-dashboard" element={
@@ -109,6 +111,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
