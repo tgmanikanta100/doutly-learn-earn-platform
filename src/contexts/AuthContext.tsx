@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-export type UserRole = 'student' | 'freelancer' | 'admin' | 'verticalhead' | 'manager' | 'teamleader' | 'subjectexpert' | 'tutor';
+export type UserRole = 'student' | 'freelancer' | 'admin' | 'verticalhead' | 'manager' | 'teamleader' | 'subjectexpert' | 'tutor' | 'bda';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +33,7 @@ export const getUserRole = (email: string): UserRole => {
   if (email.endsWith('.teamleader@doutly.com')) return 'teamleader';
   if (email.endsWith('.subjectexpert@doutly.com')) return 'subjectexpert';
   if (email.endsWith('.tutor@doutly.com')) return 'tutor';
+  if (email.endsWith('.bda@doutly.com')) return 'bda';
   return 'student'; // Default for any other email format
 };
 
