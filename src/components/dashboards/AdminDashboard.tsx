@@ -8,94 +8,140 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usersService, leadsService, doubtsService } from '@/services/firebaseService';
+import { toast } from 'sonner';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    totalUsers: 1250,
-    activeLeads: 89,
-    resolvedDoubts: 432,
-    conversionRate: 23.5
-  });
-
-  const [users, setUsers] = useState([
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'student', status: 'active', joinDate: '2024-01-15' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'tutor', status: 'active', joinDate: '2024-01-10' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', role: 'freelancer', status: 'pending', joinDate: '2024-01-20' }
-  ]);
-
-  const [leads, setLeads] = useState([
-    { id: 1, name: 'Tech Startup', contact: 'startup@example.com', vertical: 'Technology', status: 'new', assignedTo: 'Unassigned', value: '$50,000' },
-    { id: 2, name: 'E-commerce Site', contact: 'ecom@example.com', vertical: 'Retail', status: 'in-progress', assignedTo: 'Sarah Wilson', value: '$25,000' }
-  ]);
-
+  const [users, setUsers] = useState([]);
+  const [leads, setLeads] = useState([]);
+  const [doubts, setDoubts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'student' });
   const [newLead, setNewLead] = useState({ name: '', contact: '', vertical: '', value: '' });
 
-  const handleCreateUser = () => {
-    const user = {
-      id: users.length + 1,
-      ...newUser,
-      status: 'active',
-      joinDate: new Date().toISOString().split('T')[0]
-    };
-    setUsers([...users, user]);
-    setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
-    setNewUser({ name: '', email: '', role: 'student' });
-    alert('User created successfully!');
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [usersData, leadsData, doubtsData] = await Promise.all([
+        usersService.getAll(),
+        leadsService.getAll(),
+        doubtsService.getAll()
+      ]);
+      
+      setUsers(usersData);
+      setLeads(leadsData);
+      setDoubts(doubtsData);
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreateLead = () => {
-    const lead = {
-      id: leads.length + 1,
-      ...newLead,
-      status: 'new',
-      assignedTo: 'Unassigned'
-    };
-    setLeads([...leads, lead]);
-    setStats(prev => ({ ...prev, activeLeads: prev.activeLeads + 1 }));
-    setNewLead({ name: '', contact: '', vertical: '', value: '' });
-    alert('Lead created successfully!');
+  const handleCreateUser = async () => {
+    if (!newUser.name || !newUser.email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await usersService.create({
+        ...newUser,
+        joinDate: new Date().toISOString().split('T')[0]
+      });
+      
+      setNewUser({ name: '', email: '', role: 'student' });
+      await loadData();
+      toast.success('User created successfully!');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user');
+    }
   };
 
-  const assignLead = (leadId, assignee) => {
-    setLeads(leads.map(lead => 
-      lead.id === leadId ? { ...lead, assignedTo: assignee, status: 'in-progress' } : lead
-    ));
-    alert(`Lead assigned to ${assignee}`);
+  const handleCreateLead = async () => {
+    if (!newLead.name || !newLead.contact) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await leadsService.create({
+        ...newLead,
+        assignedTo: 'Unassigned'
+      });
+      
+      setNewLead({ name: '', contact: '', vertical: '', value: '' });
+      await loadData();
+      toast.success('Lead created successfully!');
+    } catch (error) {
+      console.error('Error creating lead:', error);
+      toast.error('Failed to create lead');
+    }
+  };
+
+  const assignLead = async (leadId: string, assignee: string) => {
+    try {
+      await leadsService.update(leadId, {
+        assignedTo: assignee,
+        status: 'in-progress'
+      });
+      
+      await loadData();
+      toast.success(`Lead assigned to ${assignee}`);
+    } catch (error) {
+      console.error('Error assigning lead:', error);
+      toast.error('Failed to assign lead');
+    }
   };
 
   const metrics = [
     {
       title: "Total Users",
-      value: stats.totalUsers,
+      value: users.length,
       icon: Users,
       change: "+12%",
       color: "text-blue-600"
     },
     {
       title: "Active Leads",
-      value: stats.activeLeads,
+      value: leads.filter(l => l.status !== 'closed').length,
       icon: Target,
       change: "+8%",
       color: "text-green-600"
     },
     {
-      title: "Resolved Doubts",
-      value: stats.resolvedDoubts,
+      title: "Total Doubts",
+      value: doubts.length,
       icon: TrendingUp,
       change: "+15%",
       color: "text-purple-600"
     },
     {
-      title: "Conversion Rate",
-      value: `${stats.conversionRate}%`,
+      title: "Resolved Doubts",
+      value: doubts.filter(d => d.status === 'resolved').length,
       icon: Settings,
       change: "+2.1%",
       color: "text-orange-600"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -193,7 +239,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {users.slice(0, 3).map((user) => (
+                {users.slice(0, 3).map((user: any) => (
                   <div key={user.id} className="flex items-center justify-between p-2 border rounded">
                     <div>
                       <p className="text-sm font-medium">{user.name}</p>
@@ -202,7 +248,7 @@ const AdminDashboard = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {user.status}
+                      {user.status || 'active'}
                     </span>
                   </div>
                 ))}
@@ -290,7 +336,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {leads.map((lead) => (
+                {leads.map((lead: any) => (
                   <div key={lead.id} className="flex items-center justify-between p-2 border rounded">
                     <div>
                       <p className="text-sm font-medium">{lead.name}</p>
@@ -300,7 +346,7 @@ const AdminDashboard = () => {
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         lead.status === 'new' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {lead.status}
+                        {lead.status || 'new'}
                       </span>
                       {lead.assignedTo === 'Unassigned' && (
                         <Button size="sm" onClick={() => assignLead(lead.id, 'Sarah Wilson')}>
@@ -328,27 +374,24 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">New doubt submitted</p>
-                  <p className="text-xs text-gray-600">Mathematics - Student ID: S12345</p>
+              {doubts.slice(0, 3).map((doubt: any, index) => (
+                <div key={doubt.id || index} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium">New doubt: {doubt.title}</p>
+                    <p className="text-xs text-gray-600">{doubt.subject} - {doubt.userEmail}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <Target className="h-4 w-4 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">Lead converted to purchase</p>
-                  <p className="text-xs text-gray-600">Tech Box Project - Lead ID: L67890</p>
+              ))}
+              {leads.slice(0, 2).map((lead: any, index) => (
+                <div key={lead.id || index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <Target className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium">New lead: {lead.name}</p>
+                    <p className="text-xs text-gray-600">{lead.vertical} - {lead.value}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                <Users className="h-4 w-4 text-purple-600" />
-                <div>
-                  <p className="text-sm font-medium">New tutor application</p>
-                  <p className="text-xs text-gray-600">Physics Expert - Pending Review</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>

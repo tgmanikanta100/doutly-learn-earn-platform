@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Clock, Trophy, Calendar, HelpCircle, Briefcase, Plus, MessageCircle } from 'lucide-react';
@@ -9,24 +9,78 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { doubtsService, projectsService, eventsService } from '@/services/firebaseService';
+import { toast } from 'sonner';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
-  const [doubtsCount, setDoubtsCount] = useState(8);
-  const [projectsCount, setProjectsCount] = useState(3);
-  const [eventsCount, setEventsCount] = useState(5);
+  const [doubts, setDoubts] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [events, setEvents] = useState([]);
   const [isSubmittingDoubt, setIsSubmittingDoubt] = useState(false);
   const [newDoubt, setNewDoubt] = useState({ subject: '', title: '', description: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  const loadData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const [doubtsData, projectsData, eventsData] = await Promise.all([
+        doubtsService.getAll(user.uid),
+        projectsService.getAll(user.uid),
+        eventsService.getAll()
+      ]);
+      
+      setDoubts(doubtsData);
+      setProjects(projectsData);
+      setEvents(eventsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmitDoubt = async () => {
+    if (!user || !newDoubt.subject || !newDoubt.title) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     setIsSubmittingDoubt(true);
-    // Simulate API call
-    setTimeout(() => {
-      setDoubtsCount(prev => prev + 1);
+    try {
+      await doubtsService.create({
+        ...newDoubt,
+        userId: user.uid,
+        userEmail: user.email
+      });
+      
       setNewDoubt({ subject: '', title: '', description: '' });
+      await loadData(); // Reload data
+      toast.success('Doubt submitted successfully! A tutor will respond soon.');
+    } catch (error) {
+      console.error('Error submitting doubt:', error);
+      toast.error('Failed to submit doubt. Please try again.');
+    } finally {
       setIsSubmittingDoubt(false);
-      alert('Doubt submitted successfully! A tutor will respond soon.');
-    }, 1000);
+    }
+  };
+
+  const formatTimeAgo = (timestamp: any) => {
+    if (!timestamp) return 'Just now';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
   const quickActions = [
@@ -60,11 +114,16 @@ const StudentDashboard = () => {
     }
   ];
 
-  const recentDoubts = [
-    { id: 1, subject: 'Mathematics', title: 'Calculus Integration', status: 'Resolved', time: '2 hours ago' },
-    { id: 2, subject: 'Physics', title: 'Quantum Mechanics', status: 'Pending', time: '1 day ago' },
-    { id: 3, subject: 'Chemistry', title: 'Organic Reactions', status: 'In Progress', time: '2 days ago' }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -82,8 +141,10 @@ const StudentDashboard = () => {
               <HelpCircle className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{doubtsCount}</div>
-              <p className="text-xs text-muted-foreground">2 resolved this week</p>
+              <div className="text-2xl font-bold">{doubts.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {doubts.filter(d => d.status === 'resolved').length} resolved
+              </p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -92,8 +153,10 @@ const StudentDashboard = () => {
               <Briefcase className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{projectsCount}</div>
-              <p className="text-xs text-muted-foreground">1 in progress</p>
+              <div className="text-2xl font-bold">{projects.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {projects.filter(p => p.status === 'active').length} active
+              </p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -102,8 +165,8 @@ const StudentDashboard = () => {
               <Calendar className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{eventsCount}</div>
-              <p className="text-xs text-muted-foreground">Next: React Workshop</p>
+              <div className="text-2xl font-bold">{events.length}</div>
+              <p className="text-xs text-muted-foreground">Available to join</p>
             </CardContent>
           </Card>
         </div>
@@ -179,7 +242,7 @@ const StudentDashboard = () => {
                     </DialogContent>
                   </Dialog>
                 ) : (
-                  <Button className="w-full" variant="outline" onClick={() => alert(`${action.title} feature coming soon!`)}>
+                  <Button className="w-full" variant="outline" onClick={() => toast.info(`${action.title} feature coming soon!`)}>
                     Get Started
                   </Button>
                 )}
@@ -204,34 +267,85 @@ const StudentDashboard = () => {
                   <DialogHeader>
                     <DialogTitle>Submit a New Doubt</DialogTitle>
                   </DialogHeader>
-                  {/* Same form as above */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="subject2">Subject</Label>
+                      <Select onValueChange={(value) => setNewDoubt({...newDoubt, subject: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mathematics">Mathematics</SelectItem>
+                          <SelectItem value="physics">Physics</SelectItem>
+                          <SelectItem value="chemistry">Chemistry</SelectItem>
+                          <SelectItem value="computer-science">Computer Science</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="title2">Title</Label>
+                      <Input 
+                        id="title2"
+                        value={newDoubt.title}
+                        onChange={(e) => setNewDoubt({...newDoubt, title: e.target.value})}
+                        placeholder="Brief title of your doubt"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description2">Description</Label>
+                      <Textarea 
+                        id="description2"
+                        value={newDoubt.description}
+                        onChange={(e) => setNewDoubt({...newDoubt, description: e.target.value})}
+                        placeholder="Describe your doubt in detail"
+                        rows={4}
+                      />
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={handleSubmitDoubt}
+                      disabled={isSubmittingDoubt || !newDoubt.subject || !newDoubt.title}
+                    >
+                      {isSubmittingDoubt ? 'Submitting...' : 'Submit Doubt'}
+                    </Button>
+                  </div>
                 </DialogContent>
               </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentDoubts.map((doubt) => (
-                <div key={doubt.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <MessageCircle className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium">{doubt.title}</p>
-                      <p className="text-xs text-gray-600">{doubt.subject} - {doubt.time}</p>
+              {doubts.length > 0 ? (
+                doubts.slice(0, 5).map((doubt: any) => (
+                  <div key={doubt.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="h-4 w-4 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium">{doubt.title}</p>
+                        <p className="text-xs text-gray-600">
+                          {doubt.subject} - {formatTimeAgo(doubt.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                        doubt.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                        doubt.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {doubt.status || 'pending'}
+                      </span>
+                      <Button size="sm" variant="outline">View</Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                      doubt.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                      doubt.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {doubt.status}
-                    </span>
-                    <Button size="sm" variant="outline">View</Button>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No doubts submitted yet.</p>
+                  <p className="text-sm">Submit your first doubt to get started!</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
