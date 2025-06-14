@@ -155,7 +155,7 @@ const HeroSection = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes moveBackground {
           0% { transform: translateX(0) translateY(0); }
           50% { transform: translateX(-10px) translateY(-10px); }
