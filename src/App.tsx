@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,12 +37,13 @@ const AppRoutes = () => {
       admin: '/admin-dashboard',
       verticalhead: '/vertical-head-dashboard',
       manager: '/manager-dashboard',
-      teamleader: '/team-leader-dashboard',
+      teamlead: '/team-leader-dashboard',
       subjectexpert: '/subject-expert-dashboard',
       tutor: '/tutor-dashboard',
       freelancer: '/freelancer-dashboard',
       student: '/student-dashboard',
-      bda: '/bda-dashboard'
+      bda: '/bda-dashboard',
+      sales: '/bda-dashboard'
     };
 
     const defaultRoute = dashboardRoutes[userRole] || '/student-dashboard';
@@ -68,8 +70,6 @@ const AppRoutes = () => {
             <FreelancerDashboard />
           </PrivateRoute>
         } />
-        
-        {/* Placeholder routes for other roles */}
         <Route path="/vertical-head-dashboard" element={
           <PrivateRoute role="verticalhead">
             <VerticalHeadDashboard />
@@ -81,7 +81,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         } />
         <Route path="/team-leader-dashboard" element={
-          <PrivateRoute role="teamleader">
+          <PrivateRoute role="teamlead">
             <TeamLeaderDashboard />
           </PrivateRoute>
         } />

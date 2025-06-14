@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-export type UserRole = 'student' | 'freelancer' | 'admin' | 'verticalhead' | 'manager' | 'teamleader' | 'subjectexpert' | 'tutor' | 'bda';
+export type UserRole = 'student' | 'freelancer' | 'admin' | 'verticalhead' | 'manager' | 'teamlead' | 'bda' | 'sales' | 'tutor' | 'subjectexpert';
 
 interface AuthContextType {
   user: User | null;
@@ -26,14 +26,19 @@ export const useAuth = () => {
 };
 
 export const getUserRole = (email: string): UserRole => {
+  if (email === 'admin@doutly.com') return 'admin';
+  if (email === 'verticalhead@doutly.com') return 'verticalhead';
+  if (email === 'manager@doutly.com') return 'manager';
+  if (email === 'teamlead@doutly.com') return 'teamlead';
+  if (email === 'bda@doutly.com' || email === 'sales@doutly.com') return 'bda';
   if (email.endsWith('.admin@doutly.com')) return 'admin';
   if (email.endsWith('.freelancer@doutly.com')) return 'freelancer';
   if (email.endsWith('.verticalhead@doutly.com')) return 'verticalhead';
   if (email.endsWith('.manager@doutly.com')) return 'manager';
-  if (email.endsWith('.teamleader@doutly.com')) return 'teamleader';
+  if (email.endsWith('.teamlead@doutly.com')) return 'teamlead';
   if (email.endsWith('.subjectexpert@doutly.com')) return 'subjectexpert';
   if (email.endsWith('.tutor@doutly.com')) return 'tutor';
-  if (email.endsWith('.bda@doutly.com')) return 'bda';
+  if (email.endsWith('.bda@doutly.com') || email.endsWith('.sales@doutly.com')) return 'bda';
   return 'student'; // Default for any other email format
 };
 
