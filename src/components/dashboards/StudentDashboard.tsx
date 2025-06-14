@@ -1,25 +1,27 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, Trophy, Calendar, HelpCircle, Briefcase, Plus, MessageCircle } from 'lucide-react';
+import { BookOpen, Clock, Trophy, Calendar, HelpCircle, Briefcase, Plus, MessageCircle, Ticket } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { doubtsService, projectsService, eventsService } from '@/services/firebaseService';
+import { doubtsService, projectsService, eventsService, userProfileService } from '@/services/firebaseService';
 import { toast } from 'sonner';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
   const [doubts, setDoubts] = useState([]);
   const [projects, setProjects] = useState([]);
   const [events, setEvents] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
   const [isSubmittingDoubt, setIsSubmittingDoubt] = useState(false);
   const [newDoubt, setNewDoubt] = useState({ subject: '', title: '', description: '' });
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -30,15 +32,17 @@ const StudentDashboard = () => {
     
     try {
       setLoading(true);
-      const [doubtsData, projectsData, eventsData] = await Promise.all([
+      const [doubtsData, projectsData, eventsData, profileData] = await Promise.all([
         doubtsService.getAll(user.uid),
         projectsService.getAll(user.uid),
-        eventsService.getAll()
+        eventsService.getAll(),
+        userProfileService.get(user.uid)
       ]);
       
       setDoubts(doubtsData);
       setProjects(projectsData);
       setEvents(eventsData);
+      setUserProfile(profileData);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Failed to load dashboard data');
@@ -55,15 +59,16 @@ const StudentDashboard = () => {
 
     setIsSubmittingDoubt(true);
     try {
-      await doubtsService.create({
+      const result = await doubtsService.create({
         ...newDoubt,
         userId: user.uid,
         userEmail: user.email
       });
       
       setNewDoubt({ subject: '', title: '', description: '' });
-      await loadData(); // Reload data
-      toast.success('Doubt submitted successfully! A tutor will respond soon.');
+      setIsDialogOpen(false);
+      await loadData();
+      toast.success(`Doubt submitted successfully! Ticket #${result.ticketNumber} has been generated.`);
     } catch (error) {
       console.error('Error submitting doubt:', error);
       toast.error('Failed to submit doubt. Please try again.');
@@ -116,25 +121,32 @@ const StudentDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <DashboardLayout title="Student Dashboard">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-          <p className="text-gray-600 mt-2">Learn and Earn - Welcome back, {user?.email?.split('@')[0]}</p>
+    <DashboardLayout title="Student Dashboard">
+      <div className="space-y-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Learn and Earn</h2>
+          <p className="text-gray-600">Welcome back, {user?.email?.split('@')[0]}</p>
+          {userProfile?.tickets && (
+            <p className="text-sm text-blue-600 mt-1">
+              Total Tickets Raised: {userProfile.tickets.length}
+            </p>
+          )}
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Doubts</CardTitle>
@@ -147,6 +159,18 @@ const StudentDashboard = () => {
               </p>
             </CardContent>
           </Card>
+          
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
+              <Ticket className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{userProfile?.tickets?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">Lifetime tickets</p>
+            </CardContent>
+          </Card>
+          
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Projects</CardTitle>
@@ -159,10 +183,11 @@ const StudentDashboard = () => {
               </p>
             </CardContent>
           </Card>
+          
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-              <Calendar className="h-4 w-4 text-green-500" />
+              <Calendar className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{events.length}</div>
@@ -172,7 +197,7 @@ const StudentDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
             <Card key={index} className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
               <CardHeader className="text-center">
@@ -184,7 +209,7 @@ const StudentDashboard = () => {
               </CardHeader>
               <CardContent>
                 {action.action === 'doubt' ? (
-                  <Dialog>
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="w-full" variant="outline">
                         Get Started
@@ -325,6 +350,11 @@ const StudentDashboard = () => {
                         <p className="text-xs text-gray-600">
                           {doubt.subject} - {formatTimeAgo(doubt.createdAt)}
                         </p>
+                        {doubt.ticketNumber && (
+                          <p className="text-xs text-blue-600 font-mono">
+                            Ticket: {doubt.ticketNumber}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -350,7 +380,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

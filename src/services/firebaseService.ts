@@ -10,19 +10,58 @@ import {
   where, 
   orderBy, 
   serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  getDoc,
+  setDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+
+// Generate unique ticket number
+const generateTicketNumber = () => {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000);
+  return `TKT-${timestamp}-${random}`;
+};
 
 // Doubts Service
 export const doubtsService = {
   async create(doubt: any) {
+    const ticketNumber = generateTicketNumber();
     const docRef = await addDoc(collection(db, 'doubts'), {
       ...doubt,
+      ticketNumber,
       createdAt: serverTimestamp(),
       status: 'pending'
     });
-    return docRef.id;
+    
+    // Update user profile with new ticket
+    if (doubt.userId) {
+      await this.updateUserProfile(doubt.userId, ticketNumber);
+    }
+    
+    return { id: docRef.id, ticketNumber };
+  },
+
+  async updateUserProfile(userId: string, ticketNumber: string) {
+    const userProfileRef = doc(db, 'userProfiles', userId);
+    try {
+      const userDoc = await getDoc(userProfileRef);
+      if (userDoc.exists()) {
+        const currentTickets = userDoc.data().tickets || [];
+        await updateDoc(userProfileRef, {
+          tickets: [...currentTickets, ticketNumber],
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await setDoc(userProfileRef, {
+          userId,
+          tickets: [ticketNumber],
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+    }
   },
 
   async getAll(userId?: string) {
@@ -146,5 +185,22 @@ export const eventsService = {
       id: doc.id,
       ...doc.data()
     }));
+  }
+};
+
+// User Profile Service
+export const userProfileService = {
+  async get(userId: string) {
+    const docRef = doc(db, 'userProfiles', userId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+  },
+
+  async update(userId: string, updates: any) {
+    const docRef = doc(db, 'userProfiles', userId);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
   }
 };
